@@ -1,3 +1,4 @@
+import ipaddress
 from socket import *
 import re, uuid
 import datetime
@@ -41,8 +42,29 @@ def main():
                 else:
                     print("MAC does not match: closing client")
                     clientSocket.close()
+            #ACKNOWLEGE case
             case 1:
                 print("received ACKNOWLEDGE")
+                #check for matching MAC address
+                if(returnMessage[1] == clientMac):
+                    print("\t - MAC matches")
+                    print("IP: " + returnMessage[2] + " assigned to client")
+                    ############################################
+                    #client menu
+                    # - Release
+                    # - Renew
+                    # - quit
+                    print("What would you like to do?\n")
+                    print("(1): Release")
+                    print("(2): Renew")
+                    print("(q): quit")
+                    userInput = input('Enter selection: ')
+                    if userInput == '1':
+                        #tk
+                else:
+                    print("MAC does not match")
+                    clientSocket.close()
+
             #DECLINE
             case 2:
                 print("Your Request has been declined")
