@@ -27,10 +27,10 @@ def main():
         print("\n_______________")
         print("Client", i+1, ": ")
         print("_______________")
-        print("MAC:\t\t", returnMessage[(i*4)]) #1, 5
-        print("IP:\t\t", returnMessage[(i*4) + 1]) #2, 6
-        print("Timestamp:\t", returnMessage[(i*4) + 2]) #3, 7
-        print("acked:\t\t", returnMessage[(i*4) + 3]) #4, 8
+        print("MAC:\t\t", returnMessage[(i*4)]) #1, 5 , ...
+        print("IP:\t\t", returnMessage[(i*4) + 1]) #2, 6 , ...
+        print("Timestamp:\t", returnMessage[(i*4) + 2]) #3, 7 , ...
+        print("acked:\t\t", returnMessage[(i*4) + 3]) #4, 8 , ...
         print("_______________")
         print("")
 

@@ -66,12 +66,60 @@ def searchRecord(list, filter):
             return index
     return -1
 
+def macNotRecognized(index, clientAddress, message):
+    print("\t - MAC is not in the record yet")
+    availIP = findIP()
+    if availIP != 'NONE':
+        recordList.append(Record(message[1])) #add mac and timestamp to record
+        recordList[index].clientIP = availIP #add ip to record
+        print("\t - adding MAC, IP, and timestamp to the record")
 
+        #display info
+        recordList[index].displayClientDetails()
+        #send offer
+        sendOffer(index, clientAddress)
+
+        #e. if there are no available IP's
+    else:
+        print("\t - all ip's are assigned")
+        #if there are any expired timestamps
+        if index != -1:
+            print("\t - found an expired timestamp")
+            print("\t - replacing old record with updated mac and timestamp")
+            print("setting acked to 'False'")
+            recordList[index].setTimestamp()
+            recordList[index].clientMac = message[1]
+            recordList[index].acked = False
+
+            #send offer
+            sendOffer(index, clientAddress)
+                        
+            #f. if all IP's are within the timestamp
+        else:
+            #send decline message
+            sendDecline(clientAddress)
+
+def sendOffer(index, clientAddress):
+    print("sending OFFER")
+    returnMessage = '0' + ',' + recordList[index].clientMac + ',' + recordList[index].clientIP + ',' + str(recordList[index].timestamp)
+    serverSocket.sendto(returnMessage.encode(), clientAddress)
+
+def sendAcknowledge(index, clientAddress):
+    print("sending ACKNOWLEDGE")
+    returnMessage = '1' + ',' + recordList[index].clientMac + ',' + recordList[index].clientIP + ',' + str(recordList[index].timestamp)
+    serverSocket.sendto(returnMessage.encode(), clientAddress)
+
+def sendDecline(clientAddress):
+    #send decline message
+    returnMessage = '2' + ','
+    serverSocket.sendto(returnMessage.encode(), clientAddress)
+
+#create an empty list to hold Records objects
+recordList = []
 
 def main():
     print ('The server is ready to receive')
-    #create an empty list to hold Records objects
-    recordList = []
+    
 
     while 1:
         message, clientAddress = serverSocket.recvfrom(2048) #receive message
@@ -87,9 +135,6 @@ def main():
             #3. DISCOVER case
             case 0:
                 print("received DISCOVER")
-
-                
-                            
                 #a. if MAC has an IP assigned 
                 if listIndex != -1:
                     print("\t - MAC already in record")
@@ -104,9 +149,7 @@ def main():
                         recordList[listIndex].acked = True
                         print("\t - set Acked to true")
                         #send Acknowledge messagse
-                        print("sending ACKNOWLEDGE")
-                        returnMessage = '1' + ',' + recordList[listIndex].clientMac + ',' + recordList[listIndex].clientIP + ',' + str(recordList[listIndex].timestamp)
-                        serverSocket.sendto(returnMessage.encode(), clientAddress)
+                        sendAcknowledge(listIndex, clientAddress)
 
                     #c. if not within time limit
                     else:
@@ -115,50 +158,12 @@ def main():
                         print("\t - reset timestamp")
                         recordList[listIndex].setTimestamp()
                         #send offer
-                        print("sending OFFER")
-                        returnMessage = '0' + ',' + recordList[listIndex].clientMac + ',' + recordList[listIndex].clientIP + ',' + str(recordList[listIndex].timestamp)
-                        serverSocket.sendto(returnMessage.encode(), clientAddress)
+                        sendOffer(listIndex, clientAddress)
 
                 #d. if mac does not have an ip yet
                 elif listIndex == -1:
-                    print("\t - MAC is not in the record yet")
-                    availIP = findIP()
-                    if availIP != 'NONE':
-                        recordList.append(Record(message[1])) #add mac and timestamp to record
-                        recordList[listIndex].clientIP = availIP #add ip to record
-                        print("\t - adding MAC, IP, and timestamp to the record")
-
-                        #display info
-                        recordList[listIndex].displayClientDetails()
-                        #send offer
-                        print("sending OFFER")
-                        returnMessage = '0' + ',' + recordList[listIndex].clientMac + ',' + recordList[listIndex].clientIP + ',' + str(recordList[listIndex].timestamp)
-                        serverSocket.sendto(returnMessage.encode(), clientAddress)
-
-                    #e. if there are no available IP's
-                    else:
-                        print("\t - all ip's are assigned")
-                        #if there are any expired timestamps
-                        if listIndex != -1:
-                            print("\t - found an expired timestamp")
-                            print("\t - replacing old record with updated mac and timestamp")
-                            print("setting acked to 'False'")
-                            recordList[listIndex].setTimestamp()
-                            recordList[listIndex].clientMac = message[1]
-                            recordList[listIndex].acked = False
-                            #send offer
-                            print("sending OFFER")
-                            returnMessage = '0' + ',' + recordList[listIndex].clientMac + ',' + recordList[listIndex].clientIP + ',' + str(recordList[listIndex].timestamp)
-                            serverSocket.sendto(returnMessage.encode(), clientAddress)
-                        
-                        #f. if all IP's are within the timestamp
-                        else:
-                            #send decline message
-                            returnMessage = '2' + ','
-                            serverSocket.sendto(returnMessage.encode(), clientAddress)
-
-
-                        
+                    macNotRecognized(listIndex, clientAddress, message)
+                    
 
 
             #REQUEST case
@@ -172,47 +177,57 @@ def main():
                         recordList[listIndex].acked = True
                         print("\t - set Acked to true")
                         #send Acknowledge messagse
-                        print("sending ACKNOWLEDGE")
-                        returnMessage = '1' + ',' + recordList[listIndex].clientMac + ',' + recordList[listIndex].clientIP + ',' + str(recordList[listIndex].timestamp)
-                        serverSocket.sendto(returnMessage.encode(), clientAddress)
+                        sendAcknowledge(listIndex, clientAddress)
 
                         #display info
                         recordList[listIndex].displayClientDetails()
 
                     #send the decline messages 
                     else:
-                        returnMessage = '2' + ','
-                        serverSocket.sendto(returnMessage.encode(), clientAddress)
-                        
+                        sendDecline(clientAddress) 
                 else:
-                    returnMessage = '2' + ','
-                    serverSocket.sendto(returnMessage.encode(), clientAddress)
+                    sendDecline(clientAddress)
             
             #RELEASE case
             case 2:
                 print("recieved RELEASE")
                 if listIndex != -1: #if the Mac is found in the vector
-                    #release IP
-                    recordList[listIndex].releaseIP()
+                    if recordList[listIndex].acked == False and recordList[listIndex].timestamp < datetime.datetime.now():
+                        print(" - IP has already been released")
+                    else:
+                        #release IP
+                        recordList[listIndex].releaseIP()
 
-                    #display info
-                    recordList[listIndex].displayClientDetails()
+                        #display info
+                        recordList[listIndex].displayClientDetails()
+
+                #if acked is false and the timestamp is expired
+                
+                    
                     
 
             #RENEW case
             case 3:
                 print("recieved RENEW")
                 if listIndex != -1: #if the Mac is found in the vector
-                    #renew IP
-                    recordList[listIndex].renewIP()
+                    if datetime.datetime.now() < recordList[listIndex].timestamp:
+                        #renew IP
+                        recordList[listIndex].renewIP()
 
-                    #display info
-                    recordList[listIndex].displayClientDetails()
+                        #display info
+                        recordList[listIndex].displayClientDetails()
 
-                    #send Acknowledge messagse
-                    print("sending ACKNOWLEDGE")
-                    returnMessage = '1' + ',' + recordList[listIndex].clientMac + ',' + recordList[listIndex].clientIP + ',' + str(recordList[listIndex].timestamp)
-                    serverSocket.sendto(returnMessage.encode(), clientAddress)
+                        #send Acknowledge messagse
+                        sendAcknowledge(listIndex, clientAddress)
+                    else:
+                        print(" - time expired: creating new timestamp")
+                        recordList[listIndex].setTimestamp()
+
+                        #send offer
+                        sendOffer(listIndex, clientAddress)
+                else:
+                    #mac not recognized
+                    macNotRecognized(listIndex, clientAddress, message)
             
             #LIST case
             case 4:
