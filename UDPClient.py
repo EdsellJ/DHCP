@@ -10,7 +10,7 @@ clientSocket = socket(AF_INET, SOCK_DGRAM)
 
 def main():
     #Send a DISCOVER Message
-    print("Sending Discover Message")
+    print("Sending DISCOVER")
     messageType = '0'
     message = messageType + ',' + clientMac
     clientSocket.sendto(message.encode(),(serverName, serverPort))
@@ -54,13 +54,13 @@ def main():
                     # - Release
                     # - Renew
                     # - quit
-                    while 1:
+                
+                    while True:
                         print("What would you like to do?\n")
                         print("(1): Release")
                         print("(2): Renew")
                         print("(q): quit")
                         userInput = input('Enter selection: ')
-                        print(userInput)
                     
                         if userInput == '1':
                             messageType = '2'
@@ -68,10 +68,11 @@ def main():
                             clientSocket.sendto(message.encode(),serverAddress)
                             print("IP released")
 
-                        elif userInput == 2:
+                        elif userInput == '2':
                             messageType = '3'
                             message = messageType + ',' + clientMac + ',' + returnMessage[2] + ',' + returnMessage[3]
                             clientSocket.sendto(message.encode(),serverAddress)
+                            print("sending RENEW")
                             break
 
                         else:
