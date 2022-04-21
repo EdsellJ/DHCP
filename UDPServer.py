@@ -6,11 +6,6 @@ serverPort = 18000
 serverSocket = socket(AF_INET, SOCK_DGRAM)
 serverSocket.bind(('', serverPort))
 
-addresses = [['192.168.45.1', False],['192.168.45.2', False],['192.168.45.3', False],['192.168.45.4', False],
-            ['192.168.45.5', False], ['192.168.45.6', False],['192.168.45.7', False], ['192.168.45.8', False],
-            ['192.168.45.9', False], ['192.168.45.10', False], ['192.168.45.11', False], ['192.168.45.12', False],
-            ['192.168.45.13', False], ['192.168.45.14', False]]
-
 #creating a client class to hold information about clients
 class Record:
     def __init__(self, clientMac):
@@ -20,17 +15,25 @@ class Record:
     clientIP = '0.0.0.0'
     acked = False
 
+    def releaseIP(self):
+        self.acked = False #reset Acked
+        self.timestamp = datetime.datetime.now()
+
+addresses = [['192.168.45.1', False],['192.168.45.2', False],['192.168.45.3', False],['192.168.45.4', False],
+            ['192.168.45.5', False], ['192.168.45.6', False],['192.168.45.7', False], ['192.168.45.8', False],
+            ['192.168.45.9', False], ['192.168.45.10', False], ['192.168.45.11', False], ['192.168.45.12', False],
+            ['192.168.45.13', False], ['192.168.45.14', False]]
+
+
 #searches for an available ip address
 def findIP():
-    j = -1
-    for i in addresses:
-        if addresses[j][1] != True:
-            addresses[j][1] = True
-            return addresses[j][0]
-        else:
-            print("increment IP list")
-            j += 1
+    for i in range(len(addresses)):
+        if addresses[i][1] == False:
+            addresses[i][1] = True
+            return addresses[i][0]
     return 'NONE'
+
+
 
 #meathod to search the record list and return the index of a Record object
 def searchRecord(list, filter):
@@ -93,7 +96,7 @@ def main():
                     availIP = findIP()
                     if availIP != 'NONE':
                         recordList.append(Record(message[1])) #add mac and timestamp to record
-                        recordList[listIndex].clientIP = findIP() #add ip to record
+                        recordList[listIndex].clientIP = availIP #add ip to record
                         print("\t - adding MAC, IP, and timestamp to the record")
                         #send offer
                         print("sending OFFER")
@@ -151,7 +154,22 @@ def main():
                 else:
                     returnMessage = '2' + ','
                     serverSocket.sendto(returnMessage.encode(), clientAddress)
+            
+            #RELEASE case
+            case 2:
+                print("recieved RELEASE")
+                listIndex = searchRecord(recordList, lambda x: x.clientMac == message[1])
+                if listIndex != -1: #if the Mac is found in the vector
+                    recordList[listIndex].releaseIP()
+                    print("\t - IP released")
+
+            #RENEW case
+            case 3:
+                print("recieved RENEW")
+                listIndex = searchRecord(recordList, lambda x: x.clientMac == message[1])
+                if listIndex != -1: #if the Mac is found in the vector
                     
+                
             case _:
                 print("message not recognized")
                 continue

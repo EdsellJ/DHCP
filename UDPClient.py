@@ -3,7 +3,7 @@ from socket import *
 import re, uuid
 import datetime
 
-serverName = 'localhost'
+serverName = '192.168.1.69'
 serverPort = 18000
 clientMac = ':'.join(re.findall('..', '%012x' % uuid.getnode()))
 clientSocket = socket(AF_INET, SOCK_DGRAM)
@@ -54,13 +54,32 @@ def main():
                     # - Release
                     # - Renew
                     # - quit
-                    print("What would you like to do?\n")
-                    print("(1): Release")
-                    print("(2): Renew")
-                    print("(q): quit")
-                    userInput = input('Enter selection: ')
-                    if userInput == '1':
-                        #tk
+                    while 1:
+                        print("What would you like to do?\n")
+                        print("(1): Release")
+                        print("(2): Renew")
+                        print("(q): quit")
+                        userInput = input('Enter selection: ')
+                        print(userInput)
+                    
+                        if userInput == '1':
+                            messageType = '2'
+                            message = messageType + ',' + clientMac + ',' + returnMessage[2] + ',' + returnMessage[3]
+                            clientSocket.sendto(message.encode(),serverAddress)
+                            print("IP released")
+
+                        elif userInput == 2:
+                            messageType = '3'
+                            message = messageType + ',' + clientMac + ',' + returnMessage[2] + ',' + returnMessage[3]
+                            clientSocket.sendto(message.encode(),serverAddress)
+                            break
+
+                        else:
+                            print("Goodbye")
+                            print("______________________")
+                            clientSocket.close()
+                            break
+                        
                 else:
                     print("MAC does not match")
                     clientSocket.close()
