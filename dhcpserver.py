@@ -213,7 +213,20 @@ def main():
                     print("sending ACKNOWLEDGE")
                     returnMessage = '1' + ',' + recordList[listIndex].clientMac + ',' + recordList[listIndex].clientIP + ',' + str(recordList[listIndex].timestamp)
                     serverSocket.sendto(returnMessage.encode(), clientAddress)
-                
+            
+            #LIST case
+            case 4:
+                print("recieved LIST")
+                print(" - sending record data")
+
+                #create message
+                returnMessage = ""
+                for i in range(len(recordList)):
+                    returnMessage = returnMessage + recordList[i].clientMac + ',' + recordList[i].clientIP + ',' + str(recordList[i].timestamp) + ',' + str(recordList[i].acked) + ','
+
+                #send message
+                serverSocket.sendto(returnMessage.encode(), clientAddress)
+
             case _:
                 print("message not recognized")
                 continue
