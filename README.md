@@ -1,6 +1,6 @@
 # DHCP Python Implementation
 
-###Server
+### Server
 By running the server it will wait for a client connection
 
-![Server image](https://imgur.com/a/krEO8Np)
+[Server image](https://imgur.com/a/krEO8Np)
